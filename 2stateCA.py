@@ -10,49 +10,34 @@ screen = pygame.display.set_mode((width, height))
 
 colors = {
     0: (0, 0, 0),
-    1: (255, 0, 0),
-    2: (0, 255, 0),
-    3: (0, 0, 255)
+    1: (255, 255, 255)
 }
 
-grid = np.random.randint(0, 4, size=(rows, cols))
+grid = np.random.randint(0, 2, size=(rows, cols))
 
-def count_neighbors(grid, x, y, state):
+def count_neighbors(grid, x, y):
     count = 0
     for i in range(-1, 2):
         for j in range(-1, 2):
             if i == 0 and j == 0:
                 continue
             nx, ny = (x + i) % rows, (y + j) % cols
-            if grid[nx, ny] == state:
-                count += 1
+            count += grid[nx, ny]
     return count
 
 def update_grid(grid):
     new_grid = grid.copy()
     for i in range(rows):
         for j in range(cols):
-            current_state = grid[i, j]
-            neighbors = [count_neighbors(grid, i, j, s) for s in range(4)]
-            
-            if current_state == 0:
-                if neighbors[1] >= 3:
+            neighbors = count_neighbors(grid, i, j)
+            if grid[i, j] == 0:
+                if neighbors == 3:
                     new_grid[i, j] = 1
-            elif current_state == 1:
-                if neighbors[2] >= 3:
-                    new_grid[i, j] = 2
-                elif neighbors[1] < 2:
+            else:  # Živá buňka
+                if neighbors < 2 or neighbors > 3:
                     new_grid[i, j] = 0
-            elif current_state == 2:
-                if neighbors[3] >= 3:
-                    new_grid[i, j] = 3
-                elif neighbors[2] < 2:
+                else:
                     new_grid[i, j] = 1
-            elif current_state == 3:
-                if neighbors[0] >= 3:
-                    new_grid[i, j] = 0
-                elif neighbors[3] < 2:
-                    new_grid[i, j] = 2
     return new_grid
 
 running = True
@@ -67,7 +52,7 @@ while running:
             if event.key == pygame.K_SPACE:
                 paused = not paused
             elif event.key == pygame.K_r:
-                grid = np.random.randint(0, 4, size=(rows, cols))
+                grid = np.random.randint(0, 2, size=(rows, cols))
 
     if not paused:
         grid = update_grid(grid)

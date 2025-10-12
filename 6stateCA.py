@@ -19,7 +19,7 @@ def generate_random_colors(num_colors):
         colors[i] = (r, g, b)
     return colors
 
-num_states = 5
+num_states = 6
 colors = generate_random_colors(num_states)
 
 grid = np.random.randint(0, num_states, size=(rows, cols))
