@@ -1,4 +1,4 @@
-# 2D random Life 8 directions CA
+# 2D random rules Life 8 directions CA
 
 import pygame
 import random

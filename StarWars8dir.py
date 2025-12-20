@@ -1,4 +1,4 @@
-# 2D random rules Life 4 directions CA
+# 2D Star-Wars 8 directions CA
 
 import pygame
 import random
@@ -22,23 +22,17 @@ next_grid = np.zeros((HEIGHT, WIDTH), dtype=np.uint8)
 alive_counts = np.zeros((HEIGHT, WIDTH), dtype=np.uint16)
 directions = np.zeros((HEIGHT, WIDTH), dtype=np.uint8)
 
-survival_rules = set()
-birth_rules = set()
-
 def wrap(v, m):
     if v < 0: return v + m
     if v >= m: return v - m
     return v
 
 def rndrule():
-    global survival_rules, birth_rules
-    survival_rules = set(random.sample(range(0, 9), random.randint(1, 9)))
-    birth_rules = set(random.sample(range(0, 9), random.randint(1, 9)))
     for y in range(HEIGHT):
         for x in range(WIDTH):
             if random.randint(0, 99) < 20:
                 current[y, x] = ALIVE
-                directions[y, x] = random.choice([0, 2, 4, 6])
+                directions[y, x] = random.randint(0, 7)
             else:
                 current[y, x] = DEAD
                 directions[y, x] = 0
@@ -46,16 +40,19 @@ def rndrule():
 
 def step():
     global directions
-    dx = [1, 0, -1, 0]
-    dy = [0, -1, 0, 1]
-    dir_map = {0:(1,0),2:(0,-1),4:(-1,0),6:(0,1)}
+    
+    dx = [1, 1, 0, -1, -1, -1, 0, 1]
+    dy = [0, -1, -1, -1, 0, 1, 1, 1]
+    
     next_grid.fill(DEAD)
     new_directions = np.zeros_like(directions)
     new_alive_counts = np.zeros_like(alive_counts)
+
     for y in range(HEIGHT):
         for x in range(WIDTH):
             self_val = current[y, x]
             self_dir = directions[y, x]
+
             count = 0
             for ny in range(y-1, y+2):
                 for nx in range(x-1, x+2):
@@ -65,8 +62,9 @@ def step():
                     wy = wrap(ny, HEIGHT)
                     if current[wy, wx] == ALIVE:
                         count += 1
+
             if self_val == ALIVE:
-                if count in survival_rules:
+                if count in (3, 4, 5):
                     next_grid[y, x] = ALIVE
                     new_directions[y, x] = self_dir
                     new_alive_counts[y, x] = min(alive_counts[y, x] + 1, 100)
@@ -74,7 +72,7 @@ def step():
                     next_grid[y, x] = DEATH_1
                     new_directions[y, x] = self_dir
             elif self_val == DEAD:
-                if count in birth_rules:
+                if count == 2:
                     next_grid[y, x] = ALIVE
                     dirs = []
                     for ny in range(y-1, y+2):
@@ -84,29 +82,32 @@ def step():
                             if current[wy, wx] == ALIVE:
                                 dirs.append(directions[wy, wx])
                     if dirs:
-                        new_directions[y, x] = random.choice([d for d in dirs if d in [0,2,4,6]] or [random.choice([0,2,4,6])])
+                        new_directions[y, x] = random.choice(dirs)
                     else:
-                        new_directions[y, x] = random.choice([0,2,4,6])
+                        new_directions[y, x] = random.randint(0, 7)
                 else:
                     next_grid[y, x] = DEAD
                     new_directions[y, x] = 0
             else:
                 next_grid[y, x] = self_val - 1
                 new_directions[y, x] = self_dir
+
     moved_grid = np.zeros_like(next_grid)
     moved_dirs = np.zeros_like(new_directions)
     moved_alive = np.zeros_like(new_alive_counts)
+
     for y in range(HEIGHT):
         for x in range(WIDTH):
             val = next_grid[y, x]
             if val == DEAD:
                 continue
+
             alive_age = new_alive_counts[y, x]
+
             if val == ALIVE:
                 dir = new_directions[y, x]
-                dxdy = dir_map.get(dir,(0,0))
-                nx = wrap(x + dxdy[0], WIDTH)
-                ny = wrap(y + dxdy[1], HEIGHT)
+                nx = wrap(x + dx[dir], WIDTH)
+                ny = wrap(y + dy[dir], HEIGHT)
                 moved_grid[ny, nx] = ALIVE
                 moved_dirs[ny, nx] = dir
                 moved_alive[ny, nx] = alive_age
@@ -117,6 +118,7 @@ def step():
                 moved_grid[y, x] = val
                 moved_dirs[y, x] = new_directions[y, x]
                 moved_alive[y, x] = alive_age
+
     current[:, :] = moved_grid[:, :]
     directions[:, :] = moved_dirs[:, :]
     alive_counts[:, :] = moved_alive[:, :]
@@ -126,8 +128,10 @@ def draw():
         for x in range(WIDTH):
             self_val = current[y, x]
             alive = alive_counts[y, x]
+            
             if self_val == DEAD:
                 color = (0, 0, 0)
+            
             if self_val == ALIVE:
                 if alive >= 50:
                     color = (255, 0, 0)
@@ -139,7 +143,12 @@ def draw():
                 color = (0, 0, 255)
             elif self_val == DEATH_2:
                 color = (32, 32, 32)
-            pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            
+            pygame.draw.rect(
+                screen,
+                color,
+                (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            )
 
 def main():
     rndrule()
